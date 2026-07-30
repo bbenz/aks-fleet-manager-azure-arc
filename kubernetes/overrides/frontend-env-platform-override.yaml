@@ -1,0 +1,60 @@
+# ResourceOverride: appends the upstream ENV_PLATFORM environment variable to
+# the frontend Deployment, with a different value per cloud. This is a
+# harmless, purely observational marker (upstream's own documented extension
+# point - see kubernetes/base/frontend.yaml) that proves per-cloud
+# customization is reconciled by Fleet without ever forking the base
+# Deployment manifest.
+#
+# Verified schema source:
+# https://learn.microsoft.com/azure/kubernetes-fleet/howto-use-overrides-customize-resources-placement
+apiVersion: placement.kubernetes-fleet.io/v1
+kind: ResourceOverride
+metadata:
+  name: frontend-env-platform-override
+  namespace: online-boutique
+spec:
+  resourceSelectors:
+    - group: apps
+      kind: Deployment
+      version: v1
+      name: frontend
+  policy:
+    overrideRules:
+      # --- Azure (AKS) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: azure
+        jsonPatchOverrides:
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value:
+              name: ENV_PLATFORM
+              value: "azure"
+      # --- AWS (EKS) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: aws
+        jsonPatchOverrides:
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value:
+              name: ENV_PLATFORM
+              value: "aws"
+      # --- GCP (GKE) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: gcp
+        jsonPatchOverrides:
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value:
+              name: ENV_PLATFORM
+              value: "gcp"
+  placement:
+    name: crp-online-boutique

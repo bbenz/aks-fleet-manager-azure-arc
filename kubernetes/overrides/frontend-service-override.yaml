@@ -1,0 +1,79 @@
+# ResourceOverride: per-cloud Service annotations for the frontend-external
+# LoadBalancer Service. This is the "ingress" customization required by the
+# demo design — the base Service (kubernetes/base/frontend.yaml) stays a
+# plain, cloud-neutral `type: LoadBalancer` and this override adds only the
+# annotations each cloud's load-balancer controller understands.
+#
+# One ResourceOverride object targets exactly ONE resource
+# (Service/frontend-external) and carries THREE overrideRules — one per
+# cloud label — matching Microsoft's documented "multiple override rules"
+# pattern. This avoids mixing heterogeneous resource kinds under a single
+# jsonPatchOverrides list (unsafe/unsupported in practice; see
+# docs/ARCHITECTURE.md for the full rationale).
+#
+# Verified schema source:
+# https://learn.microsoft.com/azure/kubernetes-fleet/howto-use-overrides-customize-resources-placement
+apiVersion: placement.kubernetes-fleet.io/v1
+kind: ResourceOverride
+metadata:
+  name: frontend-service-override
+  namespace: online-boutique # must match the target resource's namespace
+spec:
+  resourceSelectors:
+    - group: ""
+      kind: Service
+      version: v1
+      name: frontend-external
+  policy:
+    overrideRules:
+      # --- Azure (AKS) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: azure
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/annotations
+            value:
+              service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/_healthz"
+              demo.fleet-arc.io/cloud: "azure"
+      # --- AWS (EKS) ---
+      # `aws-load-balancer-subnets` is set explicitly rather than relying on
+      # the AWS Load Balancer Controller's tag-based auto-discovery, which has
+      # been observed to return zero candidates even with correct
+      # `kubernetes.io/role/elb` tags. The placeholder below is substituted at
+      # apply time by scripts/07-deploy-workload.ps1 with the real subnet IDs
+      # from `terraform output public_subnet_ids` in terraform/aws/, so this
+      # file stays valid for any NAME_PREFIX/ENVIRONMENT/region. If AWS is
+      # disabled or that output is unavailable, the script drops this
+      # annotation entirely and the controller falls back to auto-discovery.
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: aws
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/annotations
+            value:
+              service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+              service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+              service.beta.kubernetes.io/aws-load-balancer-subnets: "__AWS_PUBLIC_SUBNET_IDS__"
+              demo.fleet-arc.io/cloud: "aws"
+      # --- GCP (GKE) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: gcp
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/annotations
+            value:
+              cloud.google.com/l4-rbs: "enabled"
+              demo.fleet-arc.io/cloud: "gcp"
+  # Links this override to the CRP below so the annotation change reconciles
+  # immediately instead of waiting for the next scheduled CRP rollout.
+  placement:
+    name: crp-online-boutique

@@ -1,0 +1,30 @@
+# Copy to terraform.tfvars (gitignored) and adjust - or let
+# scripts/03-init-plan.ps1 generate/merge this automatically from your .env
+# and scripts/02-select-regions.ps1's region-selection output.
+# No secrets belong in this file; all fields below are non-sensitive.
+
+owner           = "your-name-or-team"
+project         = "fleet-arc-demo"
+environment     = "demo"
+expiration_date = "2026-12-31"
+
+project_id = "your-gcp-project-id"
+
+# region/zone are auto-selected by scripts/02-select-regions.ps1 unless you
+# set GCP_REGION_OVERRIDE/GCP_ZONE_OVERRIDE in .env - override here only for
+# manual/offline runs.
+# region = "us-central1"
+# zone   = "us-central1-a"
+
+# Optional least-privilege impersonation pattern (see
+# docs/AUTHENTICATION-AND-PERMISSIONS.md). Requires a one-time manual
+# bootstrap: create this service account and grant your own account
+# roles/iam.serviceAccountTokenCreator on it BEFORE setting this.
+# gcp_impersonate_service_account = "terraform-runner@your-gcp-project-id.iam.gserviceaccount.com"
+
+# machine_type    = "e2-standard-2"
+# node_min_count  = 2
+# node_max_count  = 4
+# disk_type       = "pd-standard"
+# disk_size_gb    = 50
+# release_channel = "REGULAR"

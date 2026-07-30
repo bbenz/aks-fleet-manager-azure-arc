@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive terraform/
+
+      # `terraform validate` needs `init`, but these roots must never reach a
+      # cloud in CI. -backend=false initialises providers only: no state, no
+      # credentials, no network calls to any cloud API.
+      - name: terraform init -backend=false && validate
+        run: |
+          set -euo pipefail
+          for dir in \
+            terraform/azure \
+            terraform/aws \
+            terraform/gcp \
+            terraform/bootstrap/azure \
+            terraform/bootstrap/aws \
+            terraform/bootstrap/gcp \
+            terraform/environments/demo
+          do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false -no-color
+            terraform -chdir="$dir" validate -no-color
+            echo "::endgroup::"
+          done
+
+  powershell:
+    name: PowerShell parse + analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse-check every script
+        shell: pwsh
+        run: |
+          $failed = 0
+          Get-ChildItem -Path scripts -Recurse -Filter *.ps1 | ForEach-Object {
+              $errors = $null
+              [void][System.Management.Automation.Language.Parser]::ParseFile(
+                  $_.FullName, [ref]$null, [ref]$errors)
+              if ($errors -and $errors.Count -gt 0) {
+                  $failed++
+                  Write-Host "::error file=$($_.FullName)::Parse errors:"
+                  $errors | ForEach-Object { Write-Host "  $($_.Message)" }
+              }
+          }
+          if ($failed -gt 0) { exit 1 }
+          Write-Host "All scripts parsed cleanly."
+
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction Stop
+          $results = Invoke-ScriptAnalyzer -Path scripts -Recurse -Severity Error
+          if ($results) {
+              $results | Format-Table -AutoSize | Out-String | Write-Host
+              exit 1
+          }
+          Write-Host "No PSScriptAnalyzer errors."
+
+  kubernetes:
+    name: Kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: kustomize build
+        run: kubectl kustomize kubernetes/base > /dev/null
+
+      - name: YAML parses
+        run: |
+          set -euo pipefail
+          python3 -c "
+          import sys, glob, yaml
+          bad = 0
+          for path in glob.glob('kubernetes/**/*.yaml', recursive=True):
+              try:
+                  list(yaml.safe_load_all(open(path)))
+              except Exception as exc:
+                  print(f'::error file={path}::{exc}')
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          "
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan committed files for secret patterns
+        shell: pwsh
+        run: ./scripts/lib/secret-scan.ps1
+
+      - name: Fail if a gitignored secret file was committed
+        run: |
+          set -euo pipefail
+          blocked=$(git ls-files \
+            '.env' '*.tfstate' '*.tfstate.backup' '*.tfvars' 'kubeconfig*' \
+            ':(glob)**/*credentials*' || true)
+          # *.tfvars.example is the one intentionally committed tfvars form.
+          blocked=$(echo "$blocked" | grep -v '\.tfvars\.example$' || true)
+          if [ -n "$blocked" ]; then
+            echo "::error::These files must never be committed:"
+            echo "$blocked"
+            exit 1
+          fi
+          echo "No forbidden files are tracked."

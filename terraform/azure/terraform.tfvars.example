@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars (gitignored) and adjust - or let
+# scripts/03-init-plan.ps1 generate/merge this automatically from your .env
+# and scripts/02-select-regions.ps1's region-selection output.
+# No secrets belong in this file; all fields below are non-sensitive.
+
+owner           = "your-name-or-team"
+project         = "fleet-arc-demo"
+environment     = "demo"
+expiration_date = "2026-12-31"
+
+# location is auto-selected by scripts/02-select-regions.ps1 unless you set
+# AZURE_REGION_OVERRIDE in .env - override here only for manual/offline runs.
+# location = "eastus2"
+
+# Uncomment to hard-fail terraform plan/apply if the active az CLI session
+# isn't the tenant/subscription you expect:
+# expected_tenant_id       = "00000000-0000-0000-0000-000000000000"
+# expected_subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# aks_node_vm_size        = "Standard_D2s_v3"
+# aks_node_count          = 2
+# aks_autoscaling_enabled = false
+# aks_sku_tier            = "Free"
+# fleet_hub_vm_size       = "Standard_D2s_v3"
+# enable_diagnostics      = false

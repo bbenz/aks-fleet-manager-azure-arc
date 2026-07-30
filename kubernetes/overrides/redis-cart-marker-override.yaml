@@ -1,0 +1,63 @@
+# ResourceOverride: adds a harmless `cloud` label to the redis-cart Deployment
+# (both the Deployment's own metadata and its pod template metadata). This is
+# the required "harmless Redis-related marker" demonstrating per-cloud
+# customization of the independent, in-cluster Redis instance - it does NOT
+# create any shared/managed Redis or fabricate external endpoints; redis-cart
+# remains a fully independent, ephemeral, per-cluster Deployment.
+#
+# Verified schema source:
+# https://learn.microsoft.com/azure/kubernetes-fleet/howto-use-overrides-customize-resources-placement
+apiVersion: placement.kubernetes-fleet.io/v1
+kind: ResourceOverride
+metadata:
+  name: redis-cart-marker-override
+  namespace: online-boutique
+spec:
+  resourceSelectors:
+    - group: apps
+      kind: Deployment
+      version: v1
+      name: redis-cart
+  policy:
+    overrideRules:
+      # --- Azure (AKS) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: azure
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/labels/cloud
+            value: "azure"
+          - op: add
+            path: /spec/template/metadata/labels/cloud
+            value: "azure"
+      # --- AWS (EKS) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: aws
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/labels/cloud
+            value: "aws"
+          - op: add
+            path: /spec/template/metadata/labels/cloud
+            value: "aws"
+      # --- GCP (GKE) ---
+      - clusterSelector:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  cloud: gcp
+        jsonPatchOverrides:
+          - op: add
+            path: /metadata/labels/cloud
+            value: "gcp"
+          - op: add
+            path: /spec/template/metadata/labels/cloud
+            value: "gcp"
+  placement:
+    name: crp-online-boutique

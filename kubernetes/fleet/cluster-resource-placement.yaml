@@ -1,0 +1,40 @@
+# ClusterResourcePlacement propagates the online-boutique namespace (and every
+# resource inside it, per kustomization.yaml) from the Fleet hub cluster to
+# every member cluster labeled demo=fleet-arc-online-boutique — i.e. all three
+# of our AKS, EKS (Arc), and GKE (Arc) members.
+#
+# API is the stable v1 (GA) surface — NOT v1beta1 (which is reserved for the
+# preview namespace-scoped ResourcePlacement / selectionScope: NamespaceOnly
+# features that this demo intentionally does not use).
+#
+# Verified schema source: Microsoft Learn
+# https://learn.microsoft.com/azure/kubernetes-fleet/concepts-resource-placement
+# https://learn.microsoft.com/azure/kubernetes-fleet/quickstart-resource-propagation
+apiVersion: placement.kubernetes-fleet.io/v1
+kind: ClusterResourcePlacement
+metadata:
+  name: crp-online-boutique
+spec:
+  resourceSelectors:
+    # Selecting the Namespace cascades propagation to every resource created
+    # inside it (Deployments, Services, ServiceAccounts, etc.) — this is how
+    # the entire kubernetes/base/ workload is shipped to all 3 clouds from a
+    # single source of truth without ever forking the application manifests.
+    - group: ""
+      kind: Namespace
+      name: online-boutique
+      version: v1
+  policy:
+    # PickAll + an explicit label selector (rather than a bare PickAll) makes
+    # the placement intent self-documenting: "every member cluster that is
+    # part of THIS demo", not simply "every member cluster in the fleet"
+    # (which would also matter if this hub ever gains unrelated members).
+    placementType: PickAll
+    affinity:
+      clusterAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          clusterSelectorTerms:
+            - labelSelector:
+                matchLabels:
+                  demo: fleet-arc-online-boutique
+  # strategy omitted deliberately: the Fleet default (RollingUpdate) applies.

@@ -1,0 +1,75 @@
+# ==============================================================================
+# Fleet Manager + Arc Multicloud Demo - .gitignore
+#
+# SECURITY: this file is the primary control preventing local secrets,
+# credentials, kubeconfigs, and Terraform state from being committed.
+# scripts/00-bootstrap-auth.ps1 and scripts/lib/secret-scan.ps1 both verify
+# these rules are intact before reading or generating any sensitive value.
+# ==============================================================================
+
+# ---- Local secret / bootstrap input -----------------------------------------
+.env
+.env.*
+!.env.example
+*credentials*
+*Credentials*
+*CREDENTIALS*
+secrets/
+*.secret
+*.secrets
+
+# ---- Terraform ---------------------------------------------------------------
+# NOTE: .terraform.lock.hcl is intentionally NOT ignored - HashiCorp
+# recommends committing it (it pins exact provider versions/hashes for
+# reproducible `terraform init` across machines and CI); only the
+# .terraform/ plugin cache directory itself is local-machine noise.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+*.tfplan.*
+*plan.out*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# Real tfvars files may contain environment-specific (non-secret) values but
+# are still excluded by default; only *.tfvars.example is meant to be committed.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# ---- Kubeconfigs / cloud CLI local state -------------------------------------
+kubeconfig*
+*.kubeconfig
+.kube/
+.aws/
+.azure/
+.config/gcloud/
+gcloud-service-account*.json
+*-service-account*.json
+*sa-key*.json
+service-account-key.json
+
+# ---- Generated artifacts / reports (regenerable, may reference live infra) ---
+# NOTE: "artifacts/*" (not "artifacts/") so the !artifacts/.gitkeep negation
+# below actually takes effect - gitignore never descends into a directory
+# that is itself excluded, so negating a file inside a fully-excluded
+# directory is a no-op unless the directory is excluded via a wildcard on
+# its contents instead.
+artifacts/*
+!artifacts/.gitkeep
+
+# ---- Editors / OS -------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# ---- Node / misc build noise (in case tooling adds any) ----------------------
+node_modules/
+*.log

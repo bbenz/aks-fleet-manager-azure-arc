@@ -1,0 +1,48 @@
+# Reference documentation for Fleet member cluster labels.
+#
+# This file is NOT applied with kubectl. It documents the exact label schema
+# that scripts/06-join-fleet.ps1 applies to each MemberCluster object on the
+# Fleet hub. `az fleet member create` accepts labels directly via
+# --member-labels (space-separated key=value pairs) - this is the current,
+# documented mechanism (verified against
+# https://learn.microsoft.com/cli/azure/fleet/member), so no separate
+# `kubectl label membercluster` step is needed at creation time. Because
+# `az fleet member create` "Creates or updates a member", re-running it with
+# a changed --member-labels value also updates labels on an existing member
+# later if you ever need to (`kubectl label membercluster <name> --context
+# fleet-hub-demo <key>=<value> --overwrite` works too, since MemberCluster is
+# an ordinary labelled Kubernetes object on the hub - either path is valid).
+#
+# These labels are what kubernetes/fleet/cluster-resource-placement.yaml and
+# every kubernetes/overrides/*.yaml file select on via clusterSelectorTerms.
+# Keep this file in sync if the label schema ever changes.
+#
+# Required labels (verbatim, applied identically to all 3 member clusters):
+#
+#   cloud: azure | aws | gcp                        # which public cloud hosts this member
+#   provider: aks | eks | gke                        # managed Kubernetes offering
+#   demo: fleet-arc-online-boutique                  # ties this cluster to this specific demo
+#   location: <region-or-location-string>            # e.g. eastus2, us-east-1, us-central1
+#   environment: demo                                 # lifecycle/environment marker
+#
+# Example (illustrative only — the real commands are in scripts/06-join-fleet.ps1):
+#
+#   az fleet member create -g <rg> -f <fleet> -n aks-demo \
+#     --member-cluster-id <AKS ARM resource ID> \
+#     --member-labels cloud=azure provider=aks demo=fleet-arc-online-boutique location=eastus2 environment=demo
+#
+#   az fleet member create -g <rg> -f <fleet> -n eks-demo \
+#     --member-cluster-id <Arc-connected ARM resource ID for the EKS cluster> \
+#     --member-labels cloud=aws provider=eks demo=fleet-arc-online-boutique location=us-east-1 environment=demo
+#
+#   az fleet member create -g <rg> -f <fleet> -n gke-demo \
+#     --member-cluster-id <Arc-connected ARM resource ID for the GKE cluster> \
+#     --member-labels cloud=gcp provider=gke demo=fleet-arc-online-boutique location=us-central1 environment=demo
+#
+# Fleet also auto-applies its own labels to AKS-native members (not Arc members):
+#   fleet.azure.com/location, fleet.azure.com/resource-group,
+#   fleet.azure.com/subscription-id, fleet.azure.com/cluster-name,
+#   fleet.azure.com/member-name
+# These are informational only; this demo's placement/override selectors use
+# ONLY the hand-applied labels above so that Azure, AWS, and GCP members are
+# selected symmetrically (Arc members never get fleet.azure.com/* labels).
