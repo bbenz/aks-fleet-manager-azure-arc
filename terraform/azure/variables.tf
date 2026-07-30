@@ -91,7 +91,7 @@ variable "aks_max_count" {
 }
 
 variable "aks_sku_tier" {
-  description = "AKS control plane SKU tier. Free avoids the ~$73/month Uptime SLA charge that Standard/Premium add - appropriate for a demo, not for production."
+  description = "AKS control plane SKU tier. Free avoids the Uptime SLA charge that Standard/Premium add - appropriate for a demo, not for production."
   type        = string
   default     = "Free"
 
@@ -102,7 +102,7 @@ variable "aks_sku_tier" {
 }
 
 variable "fleet_hub_vm_size" {
-  description = "VM size for the Fleet Manager hub cluster's single system node. Standard_D2s_v3 is the smallest size used in Microsoft's own Terraform quickstart - keeps the always-on hub cluster cost near the ~$158/month floor documented in docs/ARCHITECTURE.md."
+  description = "VM size for the Fleet Manager hub cluster's single system node. Standard_D2s_v3 is the smallest size used in Microsoft's own Terraform quickstart - keeps the always-on hub cluster as small as Fleet Manager supports."
   type        = string
   default     = "Standard_D2s_v3"
 }

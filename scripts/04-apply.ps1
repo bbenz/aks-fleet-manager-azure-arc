@@ -29,10 +29,11 @@ $tfRoot = Get-TerraformDir
 
 Write-Step "Cost notice"
 Write-Host "This step creates real, billable cloud infrastructure for every enabled cloud:" -ForegroundColor Yellow
-Write-Host "  azure (if enabled): AKS cluster + Fleet Manager hub cluster (~`$298+/month combined while running)"
-Write-Host "  aws   (if enabled): EKS cluster + 2x t3.large nodes (~`$220+/month while running)"
-Write-Host "  gcp   (if enabled): GKE cluster + 2-4x e2-standard-2 nodes (~`$140+/month while running)"
-Write-Host "See docs/ARCHITECTURE.md for the full cost breakdown. Run scripts/99-destroy-all.ps1 when done." -ForegroundColor Yellow
+Write-Host "  azure (if enabled): AKS cluster + Fleet Manager hub cluster"
+Write-Host "  aws   (if enabled): EKS cluster + 2x t3.large nodes"
+Write-Host "  gcp   (if enabled): GKE cluster + 2-4x e2-standard-2 nodes"
+Write-Host "Each also creates a public load balancer. Price these with your provider's own calculator." -ForegroundColor Yellow
+Write-Host "See docs/ARCHITECTURE.md for the cost-conscious choices made. Run scripts/99-destroy-all.ps1 when done." -ForegroundColor Yellow
 Write-Host "Currently enabled: $($enabledClouds -join ', ')" -ForegroundColor Yellow
 
 if (-not (Confirm-BillableAction -ActionDescription "About to run 'terraform apply' for: $($enabledClouds -join ', ')." -AutoApprove:$AutoApprove.IsPresent)) {

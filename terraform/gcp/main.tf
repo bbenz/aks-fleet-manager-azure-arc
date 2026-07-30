@@ -149,10 +149,9 @@ resource "google_project_iam_member" "gke_node_default" {
 
 # =============================================================================
 # GKE Standard, zonal cluster. Zonal (single control-plane replica) rather
-# than regional (3 replicas) - GCP's free-tier control-plane credit
-# (~$74.40/month as of this writing) covers exactly one zonal Standard
-# cluster, keeping this demo's Google Cloud cost near-zero for the control
-# plane. See docs/ARCHITECTURE.md cost section.
+# than regional (3 replicas) - GCP's free-tier control-plane credit covers
+# exactly one zonal Standard cluster, keeping this demo's Google Cloud
+# control-plane cost near-zero. See docs/ARCHITECTURE.md cost section.
 # =============================================================================
 resource "google_container_cluster" "demo" {
   project  = var.project_id

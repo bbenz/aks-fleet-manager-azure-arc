@@ -75,13 +75,13 @@ flowchart TB
 | | Azure (AKS) | AWS (EKS) | GCP (GKE) |
 |---|---|---|---|
 | Cluster type | Regional, Azure CNI Overlay | Regional (API auth mode) | **Zonal** (`us-central1-a` by default) |
-| Control plane cost tier | Free SKU (no Uptime SLA charge) | Standard ($0.10/hr) | Zonal mgmt fee (often 1 free/billing account) |
+| Control plane SKU/tier | Free SKU (no Uptime SLA) | Standard | Zonal management tier |
 | Nodes | 2x Standard_D2s_v3 (fixed, no autoscale by default) | 2x t3.large ON_DEMAND (managed node group) | 2-4x e2-standard-2 (autoscaling node pool) |
 | Networking | Azure CNI Overlay (pod CIDR does not consume VNet IPs) | Custom VPC, 2 **public** subnets, **no NAT gateway** (nodes get public IPs directly — see cost note below) | Custom VPC-native network with secondary ranges (pods/services), internal LB firewall rules |
 | Ingress path | `type: LoadBalancer` Service -> Azure Standard LB | `type: LoadBalancer` Service -> AWS Load Balancer Controller (IRSA) -> NLB | `type: LoadBalancer` Service -> GCP L4 regional backend service |
 | Identity for node workloads | Kubelet managed identity | IRSA (IAM Roles for Service Accounts) via OIDC provider | Dedicated least-privilege node service account (not Compute Engine default SA) |
 
-**Why no NAT gateway on AWS:** a NAT gateway costs ~$32/month + data
+**Why no NAT gateway on AWS:** a NAT gateway bills hourly plus data
 processing charges just to let private-subnet nodes reach the internet
 (pulling container images, talking to the EKS API, etc.). Since this is a
 demo with public endpoints already accepted as in-scope, nodes sit in
@@ -91,12 +91,11 @@ to copy for a production EKS cluster (private subnets + NAT, or VPC
 endpoints, are the production-appropriate choice).
 
 **Why zonal GKE, not regional:** a regional GKE cluster replicates the
-control plane across 3 zones for HA, at roughly 3x the (already-present)
-management fee and additional cross-zone node spread. For a demo that
-prioritizes cost over control-plane HA, zonal is the documented,
-appropriate choice — `deletion_protection = false` is also set so
-`terraform destroy` / `scripts/99-destroy-all.ps1` can tear it down without
-a manual override step.
+control plane across 3 zones for HA, at a correspondingly higher management
+fee and additional cross-zone node spread. For a demo that prioritizes cost
+over control-plane HA, zonal is the documented, appropriate choice —
+`deletion_protection = false` is also set so `terraform destroy` /
+`scripts/99-destroy-all.ps1` can tear it down without a manual override step.
 
 ## Terraform layout rationale
 
@@ -140,11 +139,13 @@ cloud credentials and zero existing state — verified via a real
 
 ## Cost
 
-See the README's cost table for the headline numbers. Cost-conscious
-choices made throughout:
+Every cloud here bills for what it creates. Deliberate cost-conscious
+choices are made throughout — no figures are quoted anywhere in this repo,
+because cloud pricing changes frequently; use each provider's own pricing
+calculator:
 
-- AKS: **Free** SKU tier (saves the ~$73/month Uptime SLA Standard/Premium tiers add) — acceptable since this is a demo, not a production system needing an availability SLA.
-- AWS: **no NAT gateway** (see above); ON_DEMAND by default with SPOT available via `node_capacity_type` for further savings at the cost of possible mid-demo interruption.
+- AKS: **Free** SKU tier — avoids the Uptime SLA charge the Standard/Premium tiers add, acceptable since this is a demo, not a production system needing an availability SLA.
+- AWS: **no NAT gateway** (see above); ON_DEMAND by default, with SPOT available via `node_capacity_type` for further savings at the cost of possible mid-demo interruption.
 - GCP: **`pd-standard`** disks (not SSD), zonal (not regional) cluster, node pool autoscaling floor of 2 (not a fixed larger count).
 - All three: fixed/small node counts (2, matching Online Boutique's ~12-pod footprint), no Log Analytics / Container Insights / Cloud Logging extras enabled by default (`enable_diagnostics = false` where applicable).
 - Nothing in this repo is designed to run unattended for a long period — `make destroy` / `scripts/99-destroy-all.ps1` is a first-class, documented step, not an afterthought.

@@ -103,7 +103,7 @@ variable "node_max_size" {
 }
 
 variable "node_capacity_type" {
-  description = "ON_DEMAND (reliable, recommended for a live demo) or SPOT (~60-70% cheaper, risks a 2-minute-notice interruption mid-demo). See docs/ARCHITECTURE.md cost section."
+  description = "ON_DEMAND (reliable, recommended for a live demo) or SPOT (substantially cheaper, risks a 2-minute-notice interruption mid-demo). See docs/ARCHITECTURE.md cost section."
   type        = string
   default     = "ON_DEMAND"
 

@@ -125,23 +125,28 @@ of those require typed confirmation unless you pass `-AutoApprove`.
 `make` is optional — every target is a one-line wrapper around the matching
 script, so `pwsh scripts\04-apply.ps1` works identically.
 
-## Approximate cost (all 3 clouds, running 24/7)
+## Cost
 
-| Component | Approx. monthly cost | Notes |
-|---|---|---|
-| Azure Fleet Manager + hub cluster | ~$158 | 1x Standard_D2s_v3 hub node; Fleet Manager control plane itself is free |
-| AKS (aks-demo) | ~$140 | Free SKU tier (no Uptime SLA charge) + 2x Standard_D2s_v3 |
-| EKS (eks-demo) | ~$207 | $73 control plane + 2x t3.large ON_DEMAND |
-| GKE (gke-demo) | ~$120 | Zonal cluster mgmt fee (often waived, 1 free zonal cluster/billing account) + 2x e2-standard-2 |
-| Arc-connected cluster resources (x2) | $0 | Arc onboarding itself is free; you pay only for the underlying clusters above |
-| **Total** | **~$625/month** (~$0.87/hr) | Run `make destroy` when not actively demoing — nothing here is designed to run unattended long-term |
+This demo creates **real, billable infrastructure** in every cloud you
+enable: a Fleet Manager hub cluster and an AKS cluster on Azure, an EKS
+cluster and node group on AWS, and a GKE cluster and node pool on GCP, plus
+one public load balancer per cloud. Arc onboarding itself is free — you pay
+for the underlying clusters.
 
-Figures are directory-level estimates (list pricing, US regions, on-demand,
-no committed-use discounts) — always confirm in each cloud's pricing
-calculator before committing. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#cost) for the full breakdown and
-the specific cost-saving choices made (Free AKS SKU tier, no NAT gateway, no
-autoscaling by default, `pd-standard` disks, etc.).
+Deliberate cost-conscious choices are documented in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#cost) (Free AKS SKU tier, no NAT
+gateway, no autoscaling by default, `pd-standard` disks, small fixed node
+counts). No figures are quoted here because cloud pricing changes frequently
+— estimate your own with the
+[Azure](https://azure.microsoft.com/pricing/calculator/),
+[AWS](https://calculator.aws/), and
+[GCP](https://cloud.google.com/products/calculator) pricing calculators
+before you apply.
+
+**Run `make destroy` when you're not actively demoing.** Nothing here is
+designed to run unattended — see the runsheet's
+[pause/resume section](docs/DEMO-RUNSHEET.md#pausing-and-resuming-clusters-without-deleting-them)
+if you need to idle between sessions without a full teardown.
 
 ## Documentation
 

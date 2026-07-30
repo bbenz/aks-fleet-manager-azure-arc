@@ -63,5 +63,5 @@ handles native, lock-table-free state locking).
 
 Applying any of the three sub-roots with the default `create_state_backend
 = false` creates **zero** resources. Enabling it creates one small storage
-account/bucket for that cloud only - object storage for a single small
-state file costs fractions of a cent per month.
+account/bucket for that cloud only - billed at each provider's ordinary
+object-storage rates for a single small state file.

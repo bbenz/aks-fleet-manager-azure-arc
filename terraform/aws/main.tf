@@ -36,9 +36,10 @@ locals {
 # Networking
 # =============================================================================
 # Cost/simplicity decision: nodes live in PUBLIC subnets with public IPs and
-# there is NO NAT gateway. A NAT gateway costs ~$33-66/month by itself
-# (roughly doubling this cluster's cost) and AWS's own EKS docs describe an
-# all-public-subnet topology as a supported deployment pattern. The
+# there is NO NAT gateway. A NAT gateway bills hourly plus data processing
+# charges (a significant share of this cluster's total) and AWS's own EKS
+# docs describe an all-public-subnet topology as a supported deployment
+# pattern. The
 # trade-off: nodes are directly reachable from the internet on any port the
 # security group allows. Mitigation: the node security group below only
 # opens the exact ports the workload needs (see aws_security_group.nodes).
@@ -207,8 +208,8 @@ resource "aws_eks_cluster" "demo" {
     bootstrap_cluster_creator_admin_permissions = true
   }
 
-  # Prevents silently drifting onto $0.60/hr extended support billing if this
-  # version is ever left unpatched past its standard-support window.
+  # Prevents silently drifting onto higher-priced extended support billing if
+  # this version is ever left unpatched past its standard-support window.
   upgrade_policy {
     support_type = "STANDARD"
   }

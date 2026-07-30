@@ -57,5 +57,10 @@ narratives, or personal account identifiers.
 ## Cost
 
 Anything that changes default node counts, VM sizes, SKUs, or adds a billable
-resource must also update the cost table in [README.md](README.md) and the
-cost section of [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+resource must also update the cost section of
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#cost).
+
+**Don't add specific price figures.** Cloud pricing changes frequently and
+stale numbers in a repo are worse than none. Describe the cost-relevant
+*choice* ("Free SKU tier", "no NAT gateway", "SPOT capacity") and let readers
+price it with their provider's own calculator.

@@ -106,7 +106,7 @@ lives on the Fleet resource, so it is **destroyed along with the Fleet** by
 4. **Show a cloud-specific difference that came from an override, not the app**: `kubectl --context <aks> get svc frontend-external -o jsonpath='{.metadata.annotations}'` vs the same on EKS/GKE — different LB annotations, same Service spec otherwise. Optionally show the `PLATFORM` badge rendering differently in each frontend if the UI theme supports it.
 5. **Show `az fleet member list -g <rg> --fleet-name <fleet>`** — three members, three clouds, one label schema.
 6. **(Optional) Live-edit an override**: change `frontend-env-platform-override`'s value for one cloud, `kubectl apply` it directly against the hub, and show it reconcile on that member within seconds — without touching `kubernetes/base/` at all.
-7. **Close with cost/teardown**: mention the running cost, then (if the demo is truly ending) run `make destroy` on screen to show teardown is a first-class, one-command operation — not an afterthought.
+7. **Close with cost/teardown**: note that this is real billable infrastructure in three clouds, then (if the demo is truly ending) run `make destroy` on screen to show teardown is a first-class, one-command operation — not an afterthought.
 
 ## Pausing and resuming clusters without deleting them
 
@@ -117,11 +117,11 @@ cluster's **compute** can be paused and resumed independently of
 Terraform state. The three clouds behave differently here, because only
 AKS can fully deallocate its control plane:
 
-| Cloud | Control plane can stop too? | What actually reaches $0 | Native operation |
+| Cloud | Control plane can stop too? | What stops billing | Native operation |
 |---|---|---|---|
 | **Azure (AKS)** | Yes | `az aks stop` — nodes **and** control plane | Cluster-level stop/start |
-| **AWS (EKS)** | No — ~$73/month control plane fee bills regardless (see `README.md`'s cost table) | Scale the managed node group to 0 | Node group scaling only |
-| **GCP (GKE)** | Mostly — zonal cluster management fee is often waived (1 free zonal cluster/billing account) | Scale the node pool to 0 | Node pool scaling only |
+| **AWS (EKS)** | No — the control plane fee bills regardless | Scale the managed node group to 0 | Node group scaling only |
+| **GCP (GKE)** | Mostly — zonal cluster management fee is often waived (one free zonal cluster per billing account) | Scale the node pool to 0 | Node pool scaling only |
 
 **Two things specific to this repo before you start:**
 
@@ -149,8 +149,8 @@ that file too if you want Terraform's own baseline to match going forward.
 ### Amazon EKS (AWS Console)
 
 Amazon EKS lets you **pause** the managed node group to stop compute
-charges, but the cluster control plane must stay active (small hourly
-base fee — see the table above).
+charges, but the cluster control plane must stay active and continues to
+bill — see the table above.
 
 **Step 1 — Stop compute nodes (scale to 0)**
 
@@ -206,7 +206,7 @@ aws eks update-nodegroup-config \
 
 Google Cloud lets you scale worker nodes to zero to save on compute
 costs; for the zonal Standard cluster this demo creates, the control
-plane management fee is often waived under the 1-free-zonal-cluster
+plane management fee is often waived under the one-free-zonal-cluster
 allowance (see the table above).
 
 **Step 1 — Stop compute nodes (scale to 0)**
@@ -270,8 +270,8 @@ GKE gracefully drains nodes it removes — `PodDisruptionBudget`s and
 ### Azure AKS (Portal or CLI)
 
 AKS is the one cloud here that can pause the **control plane as well as
-the nodes**, reaching an actual $0 compute bill while stopped — not just
-a reduced node count. Prefer this over node-pool scaling whenever you
+the nodes**, halting compute charges entirely while stopped — not just
+reducing the node count. Prefer this over node-pool scaling whenever you
 want the deepest pause.
 
 **Option A — Stop/start the whole cluster (recommended)**
@@ -309,7 +309,7 @@ az aks get-credentials --name flarc-demo-aks --resource-group flarc-demo-rg --ov
 
 This repo's AKS cluster has a single `system` node pool, and AKS never
 lets a `System` pool scale to 0 (at least one node must stay up to run
-system pods) — so this option bottoms out at 1 node, not a true $0 pause.
+system pods) — so this option bottoms out at 1 node, not a full pause.
 Use Option A for that.
 
 *Portal:* **Kubernetes services** > **`flarc-demo-aks`** > **Node pools**
