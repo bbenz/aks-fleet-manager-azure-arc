@@ -1,0 +1,25 @@
+# Normalize every text file to LF in the repository AND in the working tree.
+#
+# The explicit `eol=lf` (rather than a bare `text=auto`) is deliberate: this
+# repo is commonly cloned onto a Windows path that is also reachable from WSL.
+# With `core.autocrlf=true`, Windows Git checks files out as CRLF, and Linux
+# Git — which defaults to `autocrlf=false` — then reports every one of them as
+# modified. Pinning the working-tree ending makes both agree.
+* text=auto eol=lf
+
+# Windows batch files are the one exception: some constructs break unless the
+# file is CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never diff or line-ending-normalize these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.exe binary
+*.dll binary
